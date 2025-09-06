@@ -73,4 +73,21 @@ class AdminTest extends WP_UnitTestCase
             $output,
         );
     }
+
+    public function test_options_page_enqueues_assets()
+    {
+        wp_set_current_user(
+            $this->factory->user->create(["role" => "administrator"]),
+        );
+        set_current_screen(
+            "settings_page_field_guide_events_calendar-settings",
+        );
+        do_action(
+            "admin_enqueue_scripts",
+            "settings_page_field_guide_events_calendar-settings",
+        );
+        $this->assertTrue(
+            wp_script_is("field-guide-events-calendar-admin", "enqueued"),
+        );
+    }
 }

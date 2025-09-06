@@ -1,32 +1,42 @@
 <?php
 defined("ABSPATH") || exit();
 
+function field_guide_events_calendar_script_options($path)
+{
+    $file_path = FIELD_GUIDE_EVENTS_CALENDAR_DIR . $path;
+    $file_url = FIELD_GUIDE_EVENTS_CALENDAR_URL . $path;
+    return [
+        "path" => $file_path,
+        "url" => $file_url,
+        "version" => file_exists($file_path) ? filemtime($file_path) : null,
+    ];
+}
+
 /**
  * Register assets and provide a shortcode that enqueues them.
  */
 
 function field_guide_events_calendar_register_assets()
 {
-    $plugin_dir = FIELD_GUIDE_EVENTS_CALENDAR_DIR;
-    $plugin_url = FIELD_GUIDE_EVENTS_CALENDAR_URL;
-
-    $css_file = $plugin_dir . "assets/css/style.css";
-    $js_file = $plugin_dir . "assets/js/script.js";
-
+    $css_options = field_guide_events_calendar_script_options(
+        "assets/css/style.css",
+    );
     wp_register_style(
         "field_guide_events_calendar",
-        $plugin_url . "assets/css/style.css",
+        $css_options["url"],
         [],
-        file_exists($css_file) ? filemtime($css_file) : null,
+        $css_options["version"],
     );
 
-    // Register FullCalendar first (no deps), load in footer.
+    $js_options = field_guide_events_calendar_script_options(
+        "assets/js/full-calendar.min.js",
+    );
     wp_register_script(
         "field_guide_events_calendar-fullcalendar",
-        $plugin_url . "assets/js/full-calendar.min.js",
-        [], // deps
-        "6.1.19", // version
-        true, // in_footer
+        $js_options["url"],
+        [],
+        "6.1.19",
+        true,
     );
 
     $data = [
@@ -36,7 +46,6 @@ function field_guide_events_calendar_register_assets()
         ),
         "rest_url" => esc_url_raw(rest_url("field_guide_events_calendar/v1")),
     ];
-    // Ensure the module can read the data via the global window object.
     $js = "window.field_guide_events_calendar = " . wp_json_encode($data) . ";";
     wp_add_inline_script(
         "field_guide_events_calendar-fullcalendar",
@@ -44,13 +53,15 @@ function field_guide_events_calendar_register_assets()
         "after",
     );
 
-    // Register plugin script and declare it depends on FullCalendar so FullCalendar loads first.
+    $js_options = field_guide_events_calendar_script_options(
+        "assets/js/script.js",
+    );
     wp_register_script(
         "field_guide_events_calendar",
-        $plugin_url . "assets/js/script.js",
-        ["field_guide_events_calendar-fullcalendar"], // deps
-        file_exists($js_file) ? filemtime($js_file) : null, // version
-        true, // in_footer
+        $js_options["url"],
+        ["field_guide_events_calendar-fullcalendar"],
+        $js_options["version"],
+        true,
     );
 }
 add_action("wp_enqueue_scripts", "field_guide_events_calendar_register_assets");
